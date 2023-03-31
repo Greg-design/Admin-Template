@@ -7,6 +7,8 @@ import firebase from "../../firebase/config";
 interface AuthContextProps {
   usuario?: Usuario | null;
   carregando?: boolean;
+  cadastrar?: (email: string, senha: string) => Promise<void>;
+  login?: (email: string, senha: string) => Promise<void>;
   loginGoogle?: () => Promise<void>;
   logOut?: () => Promise<void>;
 }
@@ -57,12 +59,36 @@ export function AuthProvider({ children }: any) {
     }
   }
 
+  async function login(email: string, senha: string) {
+    try {
+      setCarregando(true);
+      const res = await firebase.auth().signInWithEmailAndPassword(email, senha);
+
+      await configurarSessao(res.user);
+      route.push("/");
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  async function cadastrar(email: string, senha: string) {
+    try {
+      setCarregando(true);
+      const res = await firebase.auth().createUserWithEmailAndPassword(email, senha);
+
+      await configurarSessao(res.user);
+      route.push("/");
+    } finally {
+      setCarregando(false);
+    }
+  }
+
   async function loginGoogle() {
     try {
       setCarregando(true);
       const res = await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
 
-      configurarSessao(res.user);
+      await configurarSessao(res.user);
       route.push("/");
     } finally {
       setCarregando(false);
@@ -93,6 +119,8 @@ export function AuthProvider({ children }: any) {
       value={{
         usuario,
         carregando,
+        cadastrar,
+        login,
         loginGoogle,
         logOut,
       }}

@@ -4,7 +4,7 @@ import useAuth from "@/data/hook/useAuth";
 import { useState } from "react";
 
 export default function Autenticacao() {
-  const { usuario, loginGoogle } = useAuth();
+  const { cadastrar, login, loginGoogle } = useAuth();
 
   const [modo, setModo] = useState<"login" | "cadastro">("login");
   const [email, setEmail] = useState("");
@@ -16,13 +16,15 @@ export default function Autenticacao() {
     setTimeout(() => setErro(null), tempoEmSeg * 1000);
   }
 
-  function submeter() {
-    if (modo === "login") {
-      console.log("login");
-      exibirErro("Ocorreu um erro no login!");
-    } else {
-      console.log("cadastrar");
-      exibirErro("Ocorreu um erro no cadastro!");
+  async function submeter() {
+    try {
+      if (modo === "login" && login) {
+        await login(email, senha);
+      } else if (cadastrar) {
+        await cadastrar(email, senha);
+      }
+    } catch (e: any) {
+      exibirErro(e?.message ?? "Ocorreu um Erro inesperado.");
     }
   }
 
