@@ -6,7 +6,9 @@ import firebase from "../../firebase/config";
 
 interface AuthContextProps {
   usuario?: Usuario | null;
+  carregando?: boolean;
   loginGoogle?: () => Promise<void>;
+  logOut?: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps>({});
@@ -56,22 +58,43 @@ export function AuthProvider({ children }: any) {
   }
 
   async function loginGoogle() {
-    const res = await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    try {
+      setCarregando(true);
+      const res = await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
 
-    configurarSessao(res.user);
-    route.push("/");
+      configurarSessao(res.user);
+      route.push("/");
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  async function logOut() {
+    try {
+      setCarregando(true);
+      await firebase.auth().signOut();
+      await configurarSessao(null);
+    } finally {
+      setCarregando(false);
+    }
   }
 
   useEffect(() => {
-    const cancelar = firebase.auth().onIdTokenChanged(configurarSessao);
-    return () => cancelar();
+    if (Cookies.get("admin-template-auth")) {
+      const cancelar = firebase.auth().onIdTokenChanged(configurarSessao);
+      return () => cancelar();
+    } else {
+      setCarregando(false);
+    }
   }, []);
 
   return (
     <AuthContext.Provider
       value={{
         usuario,
+        carregando,
         loginGoogle,
+        logOut,
       }}
     >
       {children}
